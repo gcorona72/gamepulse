@@ -7,6 +7,7 @@ La primera ejecución descarga los conectores de Maven (unos minutos).
 
 from gamepulse.common.logging import get_logger
 from gamepulse.config import get_settings
+from gamepulse.common.storage import ensure_bucket
 from gamepulse.spark.session import build_spark
 from gamepulse.spark.transforms import kafka_to_bronze
 
@@ -15,6 +16,7 @@ log = get_logger("twitch_stream_to_bronze")
 
 def main() -> None:
     settings = get_settings()
+    ensure_bucket(settings)  # el bucket debe existir antes de que Spark escriba (s3a)
     spark = build_spark("twitch_stream_to_bronze", settings)
     table_path = f"{settings.lakehouse_uri}/bronze/twitch_streams"
     checkpoint = f"{settings.lakehouse_uri}/_checkpoints/bronze_twitch_streams"

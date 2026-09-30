@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from gamepulse.common.logging import get_logger
-from gamepulse.common.storage import put_jsonl
+from gamepulse.common.storage import ensure_bucket, put_jsonl
 from gamepulse.config import get_settings
 from gamepulse.sources.steam import SteamClient
 
@@ -45,6 +45,7 @@ def collect(client: SteamClient, apps: list[dict], snapshot_ts: datetime) -> lis
 
 def main() -> None:
     settings = get_settings()
+    ensure_bucket(settings)
     snapshot_ts = datetime.now(UTC).replace(microsecond=0)
     records = collect(SteamClient(settings.steam_api_key), load_apps(), snapshot_ts)
     key = f"landing/steam/current_players/dt={snapshot_ts:%Y-%m-%d}/{snapshot_ts:%H%M%S}.jsonl"

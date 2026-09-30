@@ -18,6 +18,15 @@ def s3_client(settings: Settings):
     )
 
 
+def ensure_bucket(settings: Settings) -> None:
+    """Crea el bucket del lakehouse si no existe (idempotente). Sustituye al init con `mc`."""
+    client = s3_client(settings)
+    try:
+        client.head_bucket(Bucket=settings.lakehouse_bucket)
+    except Exception:
+        client.create_bucket(Bucket=settings.lakehouse_bucket)
+
+
 def to_jsonl(records: Iterable[dict]) -> bytes:
     return "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records).encode("utf-8")
 
