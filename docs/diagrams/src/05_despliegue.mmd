@@ -1,0 +1,39 @@
+%% GamePulse — Despliegue (dónde corre cada pieza)
+flowchart LR
+  subgraph MAC["MacBook Pro M3 Pro · Docker Desktop"]
+    direction TB
+    subgraph ING["Contenedores de ingesta<br/>(profile: ingest)"]
+      TP["twitch-producer"]
+      SPL["steam-players"]
+    end
+    subgraph INFRA["Contenedores de infraestructura<br/>(restart: unless-stopped)"]
+      RP["redpanda · :19092"]
+      RC["console · :8080"]
+      MI["minio · :9000/:9001"]
+    end
+    subgraph LOC["Procesos locales<br/>(uv · Python 3.12 · Java 21)"]
+      SJ["Spark"]
+      DB["dbt"]
+      AFW["Airflow"]
+      STL["Streamlit"]
+    end
+    ING --> INFRA
+    LOC -->|lee Kafka| INFRA
+  end
+
+  subgraph AZURE["Azure for Students"]
+    direction TB
+    ST[("ADLS Gen2<br/>Delta Lake")]
+    FAB["Fabric + Power BI<br/>(opcional)"]
+    ST -.-> FAB
+  end
+
+  subgraph EXT["Servicios externos"]
+    direction TB
+    GH["GitHub<br/>repo + Actions (CI)"]
+    HF["Hugging Face Hub"]
+    GM["Gemini API"]
+  end
+
+  LOC -->|lee y escribe| ST
+  LOC -.-> EXT

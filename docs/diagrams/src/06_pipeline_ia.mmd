@@ -1,0 +1,18 @@
+%% GamePulse — Las dos piezas de IA
+flowchart LR
+  subgraph FT["Modelo de sentimiento · se ENTRENA"]
+    R[("Reseñas Steam<br/>silver")] --> DS["Dataset etiquetado<br/>voted_up = sí/no"]
+    DS --> SPLIT["train / validación / test"]
+    BASE["xlm-roberta-base<br/>Hugging Face Hub"] --> TR
+    SPLIT --> TR["Fine-tuning<br/>transformers · Trainer"]
+    TR --> EV["Evaluación<br/>accuracy · F1"]
+    TR -.registra.-> MLF[("MLflow<br/>experimentos y modelos")]
+    EV --> PRED["Predicciones"] --> FR[("gold.fct_reviews<br/>sentiment_label")]
+  end
+  subgraph AGT["Agente text-to-SQL · NO se entrena"]
+    Q["Pregunta en español"] --> LLM["LLM por API<br/>Gemini"]
+    SCH["Esquema de gold<br/>como contexto"] --> LLM
+    LLM --> SQL["SQL generado"] --> EXE["DuckDB ejecuta"] --> ANS["Respuesta en español"]
+    EXE -.error.-> LLM
+  end
+  FR -.-> SCH

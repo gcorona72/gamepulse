@@ -1,4 +1,4 @@
-"""Prueba las transformaciones de Spark en local, sin Kafka ni MinIO (necesita Java 17+)."""
+"""Prueba las transformaciones de Spark en local, sin Kafka ni MinIO (necesita Java 21 o 21)."""
 
 import json
 import shutil

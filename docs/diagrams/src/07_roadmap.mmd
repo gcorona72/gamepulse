@@ -1,0 +1,21 @@
+%% GamePulse — Roadmap del TFG por sprints
+gantt
+  title GamePulse · Roadmap (5 sprints de 2 semanas)
+  dateFormat YYYY-MM-DD
+  axisFormat %d %b
+  todayMarker off
+  section Sprint 1 · Ingesta
+  Entorno, Kafka, productores           :s1a, 2026-09-28, 7d
+  Spark → bronze en ADLS + cruce IGDB   :s1b, after s1a, 7d
+  section Sprint 2 · Fuentes y limpieza
+  Precios, descuentos y reseñas Steam   :s2a, 2026-10-12, 7d
+  Capa silver con PySpark               :s2b, after s2a, 7d
+  section Sprint 3 · Modelo de negocio
+  Gold con dbt (estrella)               :s3a, 2026-10-26, 7d
+  Tests, SCD2 y documentación           :s3b, after s3a, 7d
+  section Sprint 4 · Orquestación y consumo
+  Airflow                               :s4a, 2026-11-09, 7d
+  Dashboard + CI (+ Fabric opcional)    :s4b, after s4a, 7d
+  section Sprint 5 · IA y cierre
+  Fine-tuning + agente text-to-SQL      :s5a, 2026-11-23, 7d
+  Memoria final y defensa               :crit, s5b, after s5a, 10d

@@ -1,0 +1,27 @@
+%% GamePulse — Secuencia de la ingesta en streaming (Twitch)
+sequenceDiagram
+  autonumber
+  participant P as Productor Twitch
+  participant T as Twitch API
+  participant K as Kafka (Redpanda)
+  participant S as Spark Streaming
+  participant L as ADLS Gen2 (bronze)
+
+  loop cada 60 segundos
+    P->>T: token OAuth (client credentials, si ha caducado)
+    P->>T: GET /games/top (50 juegos)
+    loop por cada juego
+      P->>T: GET /streams?game_id=… (hasta 100 directos)
+      T-->>P: directos con espectadores
+    end
+    P->>K: publica un evento por directo (clave = game_id)
+  end
+
+  loop micro-lote cada 1 minuto
+    S->>K: lee desde el último offset guardado
+    K-->>S: eventos nuevos
+    S->>L: append en tabla Delta (partición event_date)
+    S->>L: guarda checkpoint (offsets procesados)
+  end
+
+  Note over K,L: Si Spark se para, Kafka conserva los mensajes 7 días.<br/>Al reiniciar, el checkpoint evita duplicados (exactly-once).

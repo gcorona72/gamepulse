@@ -7,6 +7,10 @@ Combina **streaming** (audiencia de Twitch minuto a minuto) y **batch** (jugador
 
 ## Arquitectura
 
+![Arquitectura de GamePulse (animada)](docs/diagrams/animated/arquitectura.gif)
+
+Todos los diagramas (capas, modelo en estrella, secuencia de ingesta, despliegue, IA y roadmap) están en [`docs/diagrams`](docs/diagrams/README.md).
+
 ```
 Twitch API ──> Kafka (Redpanda) ──> Spark Structured Streaming ─┐
 Steam API ───> extractores batch (Python) ──> landing (JSONL) ──┤
@@ -29,13 +33,18 @@ Orquestación: Airflow · Infraestructura: Docker Compose · CI: GitHub Actions
 | Orquestación | Airflow | ⏳ Semana 7 |
 | Consumo e IA | Streamlit, LLM | ⏳ Semanas 8-9 |
 
+## Sprint actual
+
+**Sprint 1 — Ingesta** · hoja de ruta y checklist en [`docs/sprints/SPRINT-1.md`](docs/sprints/SPRINT-1.md).
+
 ## Puesta en marcha (macOS, Apple Silicon)
 
 ```bash
 # 1. Herramientas (una vez)
-brew install uv openjdk@17
+brew install uv openjdk@21
 brew install --cask docker          # Docker Desktop: Settings > Resources > Memory ≥ 8 GB
-echo 'export JAVA_HOME=$(/usr/libexec/java_home -v 17)' >> ~/.zshrc && source ~/.zshrc
+# Editor: PyCharm → Settings → Python Interpreter → uv / .venv del proyecto
+echo 'export JAVA_HOME=$(/usr/libexec/java_home -v 21)' >> ~/.zshrc && source ~/.zshrc
 
 # 2. Proyecto
 cp .env.example .env                # rellena TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET
@@ -76,6 +85,7 @@ src/gamepulse/
 config/steam_apps.csv       juegos de Steam seguidos
 tests/                      tests unitarios (también de Spark, sin infraestructura)
 docs/PLAN.md                plan del TFG semana a semana
+docs/diagrams/              diagramas (Mermaid + SVG/PNG)
 ```
 
 ## Decisiones de diseño

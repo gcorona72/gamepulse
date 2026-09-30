@@ -1,0 +1,55 @@
+%% GamePulse — Arquitectura general
+flowchart LR
+  subgraph F["① Fuentes"]
+    direction TB
+    TW["Twitch API<br/>audiencia en directo"]
+    ST["Steam API<br/>jugadores · precios · reseñas"]
+    IG["IGDB API<br/>cruce Twitch ↔ Steam"]
+  end
+
+  subgraph I["② Ingesta · Mac (Docker)"]
+    direction TB
+    PR["Productor Twitch<br/>Python · cada 60 s"]
+    KF[("Kafka · Redpanda<br/>retención 7 días")]
+    SB["Extractores Steam<br/>Python · batch"]
+    PR --> KF
+  end
+
+  subgraph L["③ Lakehouse · Azure ADLS Gen2 · Delta Lake<br/>(MinIO como copia local)"]
+    direction TB
+    BR[("BRONZE<br/>en bruto")]
+    SI[("SILVER<br/>limpio")]
+    GO[("GOLD<br/>modelo en estrella")]
+    BR -->|PySpark| SI
+    SI -->|dbt| GO
+  end
+
+  subgraph C["④ Consumo"]
+    direction TB
+    DSH["Dashboard<br/>Streamlit"]
+    AG["Agente text-to-SQL<br/>Gemini"]
+    ML["Modelo de sentimiento<br/>Hugging Face · MLflow"]
+    FB["Fabric + Power BI<br/>opcional"]
+  end
+
+  AF{{"Airflow · orquesta los procesos batch y dbt"}}
+
+  TW --> PR
+  ST --> SB
+  IG -.-> SB
+  KF -->|Spark Streaming| BR
+  SB --> BR
+  GO --> DSH
+  GO --> AG
+  GO <--> ML
+  GO -.-> FB
+  AF -.-> L
+
+  classDef ext fill:#eef2ff,stroke:#6366f1,color:#1e1b4b
+  classDef store fill:#ecfdf5,stroke:#10b981,color:#064e3b
+  classDef proc fill:#fff7ed,stroke:#f97316,color:#431407
+  classDef ai fill:#fdf4ff,stroke:#c026d3,color:#4a044e
+  class TW,ST,IG ext
+  class KF,BR,SI,GO store
+  class PR,SB,AF proc
+  class DSH,AG,ML,FB ai

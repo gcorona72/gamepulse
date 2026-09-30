@@ -1,0 +1,19 @@
+{
+ "theme": "default",
+ "themeVariables": {
+  "fontFamily": "Helvetica, Arial, sans-serif",
+  "fontSize": "15px"
+ },
+ "flowchart": {
+  "curve": "basis",
+  "htmlLabels": true
+ },
+ "gantt": {
+  "leftPadding": 260,
+  "barHeight": 32,
+  "fontSize": 16,
+  "sectionFontSize": 16,
+  "useWidth": 1800,
+  "barGap": 8
+ }
+}

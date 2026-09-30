@@ -1,0 +1,79 @@
+%% GamePulse — Modelo dimensional de la capa gold (previsto)
+erDiagram
+  DIM_GAME ||--o{ FCT_TWITCH_AUDIENCE_HOURLY : ""
+  DIM_GAME ||--o{ FCT_STEAM_PLAYERS_HOURLY : ""
+  DIM_GAME ||--o{ FCT_STEAM_PRICE_DAILY : ""
+  DIM_GAME ||--o{ FCT_REVIEWS : ""
+  DIM_DATE ||--o{ FCT_TWITCH_AUDIENCE_HOURLY : ""
+  DIM_DATE ||--o{ FCT_STEAM_PLAYERS_HOURLY : ""
+  DIM_DATE ||--o{ FCT_STEAM_PRICE_DAILY : ""
+  DIM_DATE ||--o{ FCT_REVIEWS : ""
+  DIM_TIME ||--o{ FCT_TWITCH_AUDIENCE_HOURLY : ""
+  DIM_TIME ||--o{ FCT_STEAM_PLAYERS_HOURLY : ""
+  DIM_LANGUAGE ||--o{ FCT_REVIEWS : ""
+  DIM_GAME ||--o{ SNP_GAME_PRICE : "historial SCD2"
+
+  DIM_GAME {
+    int game_key PK
+    string twitch_game_id
+    string igdb_id
+    int steam_appid
+    string game_name
+    string genres
+    date release_date
+  }
+  DIM_DATE {
+    int date_key PK
+    date full_date
+    int year
+    int month
+    int day_of_week
+    boolean is_weekend
+  }
+  DIM_TIME {
+    int time_key PK
+    int hour
+  }
+  DIM_LANGUAGE {
+    int language_key PK
+    string language_code
+  }
+  FCT_TWITCH_AUDIENCE_HOURLY {
+    int game_key FK
+    int date_key FK
+    int time_key FK
+    bigint avg_viewers
+    bigint peak_viewers
+    int live_streams
+  }
+  FCT_STEAM_PLAYERS_HOURLY {
+    int game_key FK
+    int date_key FK
+    int time_key FK
+    bigint avg_players
+    bigint peak_players
+  }
+  FCT_STEAM_PRICE_DAILY {
+    int game_key FK
+    int date_key FK
+    decimal price_eur
+    int discount_pct
+    boolean is_on_sale
+  }
+  FCT_REVIEWS {
+    string review_id PK
+    int game_key FK
+    int date_key FK
+    int language_key FK
+    boolean voted_up
+    string sentiment_label
+    float sentiment_score
+    float playtime_hours
+  }
+  SNP_GAME_PRICE {
+    int game_key FK
+    decimal price_eur
+    int discount_pct
+    timestamp valid_from
+    timestamp valid_to
+  }

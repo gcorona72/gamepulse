@@ -1,0 +1,31 @@
+%% GamePulse — Flujo de datos por capas (arquitectura medallion)
+flowchart TB
+  subgraph BRONZE["BRONZE · tal cual llega"]
+    B1["twitch_streams<br/>mensaje JSON en bruto + metadatos Kafka"]
+    B2["steam_players · steam_store · steam_reviews<br/>JSON en bruto"]
+  end
+  subgraph SILVER["SILVER · limpio y tipado (PySpark)"]
+    S1["twitch_streams<br/>tipos, deduplicado por event_id,<br/>valores imposibles saneados"]
+    S2["twitch_audience_minute<br/>agregado juego × minuto"]
+    S3["steam_players · steam_prices · steam_reviews<br/>limpios y deduplicados"]
+    S4["game_mapping<br/>Twitch ↔ IGDB ↔ Steam"]
+  end
+  subgraph GOLD["GOLD · modelo de negocio (dbt)"]
+    G1["Modelo en estrella<br/>hechos + dimensiones"]
+    G2["SCD2 de precios<br/>snapshots de dbt"]
+    G3["Tests de calidad<br/>not_null, unique, relationships"]
+  end
+  B1 --> S1 --> S2
+  B2 --> S3
+  S4
+  S2 --> G1
+  S3 --> G1
+  S4 --> G1
+  S3 --> G2
+  G1 --- G3
+  classDef b fill:#f5ebe0,stroke:#a47148,color:#3d2b1f
+  classDef s fill:#eef1f4,stroke:#8a99a8,color:#1f2933
+  classDef g fill:#fef6d8,stroke:#caa53d,color:#3d3000
+  class B1,B2 b
+  class S1,S2,S3,S4 s
+  class G1,G2,G3 g

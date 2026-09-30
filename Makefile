@@ -1,4 +1,4 @@
-.PHONY: install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -41,3 +41,6 @@ bronze:    ## Spark Structured Streaming: Kafka -> Delta bronze
 
 inspect:   ## Consulta rápida de la tabla bronze
 	uv run python -m gamepulse.spark.inspect_bronze
+
+diagrams:  ## Regenera las imágenes de docs/diagrams (necesita Node.js)
+	./scripts/render_diagrams.sh
