@@ -44,7 +44,8 @@ Orquestación: Airflow · Infraestructura: Docker Compose · CI: GitHub Actions
 brew install uv openjdk@21
 brew install --cask docker          # Docker Desktop: Settings > Resources > Memory ≥ 8 GB
 # Editor: PyCharm → Settings → Python Interpreter → uv / .venv del proyecto
-echo 'export JAVA_HOME=$(/usr/libexec/java_home -v 21)' >> ~/.zshrc && source ~/.zshrc
+echo 'export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home' >> ~/.zshrc
+echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc   # java -version → 21
 
 # 2. Proyecto
 cp .env.example .env                # rellena TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET
