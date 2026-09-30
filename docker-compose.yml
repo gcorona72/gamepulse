@@ -1,0 +1,126 @@
+# Infraestructura local de GamePulse.
+# Levantar: docker compose up -d   ·   Parar: docker compose down   ·   Borrar datos: docker compose down -v
+name: gamepulse
+
+services:
+  # --- Kafka (Redpanda: compatible con la API de Kafka, un solo binario, ligero en Apple Silicon) ---
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.7
+    command:
+      - redpanda start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --mode dev-container
+      - --smp 1
+      - --memory 1G
+      - --default-log-level=warn
+    ports:
+      - "19092:19092"   # Kafka (desde tu Mac)
+      - "18081:18081"   # Schema Registry
+      - "19644:9644"    # Admin API
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Crea los topics al arrancar
+  redpanda-init:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.7
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command: >
+      -c "rpk topic create twitch.streams.snapshots -p 3 -c retention.ms=604800000 -X brokers=redpanda:9092 || true"
+    restart: "no"
+
+  # UI web para ver topics y mensajes: http://localhost:8080
+  console:
+    image: docker.redpanda.com/redpandadata/console:v2.7.2
+    entrypoint: /bin/sh
+    command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:9092"]
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  # --- Almacenamiento de objetos compatible con S3 (base del lakehouse) ---
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # Consola web: http://localhost:9001
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Crea el bucket del lakehouse al arrancar
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: -c "mc alias set local http://minio:9000 minioadmin minioadmin && mc mb -p local/lakehouse && echo 'bucket lakehouse listo'"
+    restart: "no"
+
+  # --- Ingesta (se arrancan con `make ingest`, necesitan .env con las credenciales) ---
+  # restart: unless-stopped -> si el Mac o Docker se reinician, vuelven a arrancar solos.
+  twitch-producer:
+    build: .
+    command: ["python", "-m", "gamepulse.ingestion.twitch_producer"]
+    profiles: ["ingest"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    restart: unless-stopped
+
+  steam-players:
+    build: .
+    command: ["python", "-m", "gamepulse.ingestion.steam_players_loop"]
+    profiles: ["ingest"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      S3_ENDPOINT: http://minio:9000
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Airflow se añade en la semana 7 (ver docs/PLAN.md)
+
+volumes:
+  redpanda_data:
+  minio_data:
