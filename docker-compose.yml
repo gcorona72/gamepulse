@@ -106,8 +106,35 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  # Spark Structured Streaming: Kafka -> Delta bronze en MinIO, 24/7.
+  # El checkpoint vive en MinIO: si se reinicia, retoma donde lo dejó sin duplicar.
+  # No lances `make bronze` a la vez que este servicio (comparten checkpoint).
+  spark-bronze:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+    profiles: ["ingest"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      S3_ENDPOINT: http://minio:9000
+      LAKEHOUSE_TARGET: minio
+    ports:
+      - "4040:4040"   # Spark UI: http://localhost:4040
+    volumes:
+      - spark_ivy:/root/.ivy2.5.2   # conectores de Maven: se descargan una vez
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
   # Airflow se añade en la semana 7 (ver docs/PLAN.md)
 
 volumes:
   redpanda_data:
   minio_data:
+  spark_ivy:

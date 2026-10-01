@@ -18,14 +18,14 @@ test:
 lint:
 	uv run ruff check src tests
 
-ingest:    ## Arranca la captura 24/7 en Docker (Twitch + Steam), se reanuda sola tras reiniciar
+ingest:    ## Arranca la captura 24/7 en Docker (Twitch + Steam + Spark bronze), se reanuda sola tras reiniciar
 	docker compose --profile ingest up -d --build
 
 ingest-stop: ## Para solo la captura
-	docker compose --profile ingest stop twitch-producer steam-players
+	docker compose --profile ingest stop twitch-producer steam-players spark-bronze
 
 logs:      ## Ver lo que está haciendo la captura (Ctrl+C para salir)
-	docker compose --profile ingest logs -f --tail 50 twitch-producer steam-players
+	docker compose --profile ingest logs -f --tail 50 twitch-producer steam-players spark-bronze
 
 status:    ## Estado de los contenedores
 	docker compose --profile ingest ps
@@ -39,7 +39,7 @@ steam:     ## Batch: jugadores de Steam -> landing en MinIO
 game-map:  ## Batch: cruce Twitch <-> IGDB <-> Steam -> landing en MinIO
 	uv run python -m gamepulse.ingestion.game_map_batch
 
-bronze:    ## Spark Structured Streaming: Kafka -> Delta bronze
+bronze:    ## (Depuración) Spark bronze en primer plano. Antes: docker compose stop spark-bronze
 	uv run python -m gamepulse.spark.twitch_stream_to_bronze
 
 inspect:   ## Consulta rápida de la tabla bronze
