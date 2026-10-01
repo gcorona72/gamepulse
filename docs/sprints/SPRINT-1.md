@@ -29,7 +29,7 @@ Marca cada paso al terminarlo (en GitHub puedes editar este archivo y cambiar `[
 - [ ] **12. Aprender Spark:** DataFrames, evaluación perezosa, Structured Streaming, checkpoints, Delta Lake
 - [x] **13. Bronze en local:** `make bronze` → `make inspect`
 - [x] **14. Bronze en Azure:** configurar Spark para escribir en ADLS Gen2 (`abfss://`)
-- [ ] **15. Cruce Twitch ↔ Steam:** tabla de juegos vía IGDB (`igdb_id` → `appid` de Steam)
+- [x] **15. Cruce Twitch ↔ Steam:** tabla de juegos vía IGDB (`igdb_id` → `appid` de Steam)
 
 ## F · Cerrar el sprint (último día)
 - [ ] **16. Memoria:** introducción y objetivos
