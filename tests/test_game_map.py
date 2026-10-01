@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
-from gamepulse.ingestion.game_map_batch import build_game_map
+from gamepulse.ingestion.game_map_batch import build_game_map, merge_tracked
+from gamepulse.ingestion.steam_players_batch import merge_apps
 
 TS = datetime(2026, 10, 1, tzinfo=UTC)
 TOP = [
@@ -28,3 +29,21 @@ def test_cruce_twitch_steam():
 def test_campo_antiguo_category():
     rows = build_game_map(TOP[:1], [{"game": 1020, "uid": "271590", "category": 1}], TS)
     assert rows[0]["steam_appid"] == 271590
+
+
+def test_lista_acumulada_no_duplica():
+    rows = build_game_map(TOP, EXTERNAL, TS)
+    tracked, new = merge_tracked([], rows)
+    assert [a["appid"] for a in new] == [271590]
+    tracked2, new2 = merge_tracked(tracked, rows)  # segunda ejecución: nada nuevo
+    assert new2 == [] and len(tracked2) == 1
+
+
+def test_merge_apps_sin_duplicados():
+    seed = [{"appid": 730, "name": "Counter-Strike 2"}]
+    disc = [{"appid": 730, "name": "Counter-Strike", "first_seen": "x"},
+            {"appid": 271590, "name": "Grand Theft Auto V", "first_seen": "x"}]
+    assert merge_apps(seed, disc) == [
+        {"appid": 730, "name": "Counter-Strike 2"},
+        {"appid": 271590, "name": "Grand Theft Auto V"},
+    ]

@@ -40,3 +40,21 @@ def put_jsonl(settings: Settings, key: str, records: list[dict]) -> str:
         ContentType="application/x-ndjson",
     )
     return f"s3a://{settings.lakehouse_bucket}/{key}"
+
+
+def get_json(settings: Settings, key: str, default=None):
+    """Lee un JSON del lakehouse; devuelve `default` si no existe."""
+    try:
+        obj = s3_client(settings).get_object(Bucket=settings.lakehouse_bucket, Key=key)
+    except Exception:
+        return default
+    return json.loads(obj["Body"].read())
+
+
+def put_json(settings: Settings, key: str, data) -> None:
+    s3_client(settings).put_object(
+        Bucket=settings.lakehouse_bucket,
+        Key=key,
+        Body=json.dumps(data, ensure_ascii=False, indent=1).encode("utf-8"),
+        ContentType="application/json",
+    )

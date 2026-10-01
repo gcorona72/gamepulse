@@ -1,4 +1,5 @@
-"""Servicio de larga duración: ejecuta el batch de jugadores de Steam cada STEAM_POLL_SECONDS.
+"""Servicio de larga duración: cada STEAM_POLL_SECONDS actualiza el cruce Twitch <-> Steam
+(game_map) y captura los jugadores de Steam.
 Lo usa el contenedor `steam-players` (docker compose). En la semana 7 lo sustituye Airflow.
 
 Ejecutar en local:  uv run python -m gamepulse.ingestion.steam_players_loop
@@ -8,7 +9,7 @@ import time
 
 from gamepulse.common.logging import get_logger
 from gamepulse.config import get_settings
-from gamepulse.ingestion import steam_players_batch
+from gamepulse.ingestion import game_map_batch, steam_players_batch
 
 log = get_logger("steam_players_loop")
 _running = True
@@ -26,6 +27,10 @@ def main() -> None:
     log.info("Capturando jugadores de Steam cada %ss", settings.steam_poll_seconds)
     while _running:
         started = time.monotonic()
+        try:
+            game_map_batch.main()  # descubre juegos nuevos del top de Twitch
+        except Exception:
+            log.exception("Fallo en el cruce con IGDB; se usa la última lista conocida")
         try:
             steam_players_batch.main()
         except Exception:

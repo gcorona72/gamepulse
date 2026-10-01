@@ -1,4 +1,5 @@
-"""Batch horario: jugadores simultáneos en Steam para la lista de juegos seguidos.
+"""Batch horario: jugadores simultáneos en Steam para la lista de juegos seguidos
+(config/steam_apps.csv + los descubiertos en el top de Twitch vía IGDB).
 Escribe JSON Lines en la zona landing del lakehouse:
   s3://lakehouse/landing/steam/current_players/dt=YYYY-MM-DD/HHMMSS.jsonl
 
@@ -11,7 +12,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from gamepulse.common.logging import get_logger
-from gamepulse.common.storage import ensure_bucket, put_jsonl
+from gamepulse.common.storage import ensure_bucket, get_json, put_jsonl
 from gamepulse.config import get_settings
 from gamepulse.sources.steam import SteamClient
 
@@ -22,6 +23,13 @@ APPS_FILE = Path(__file__).resolve().parents[3] / "config" / "steam_apps.csv"
 def load_apps(path: Path = APPS_FILE) -> list[dict]:
     with path.open(encoding="utf-8") as f:
         return [{"appid": int(r["appid"]), "name": r["name"]} for r in csv.DictReader(f)]
+
+
+def merge_apps(seed: list[dict], discovered: list[dict]) -> list[dict]:
+    """Lista fija + descubiertos, sin duplicar appid (manda el nombre de la lista fija)."""
+    seen = {a["appid"] for a in seed}
+    extra = [{"appid": a["appid"], "name": a["name"]} for a in discovered if a["appid"] not in seen]
+    return seed + extra
 
 
 def collect(client: SteamClient, apps: list[dict], snapshot_ts: datetime) -> list[dict]:
@@ -47,7 +55,9 @@ def main() -> None:
     settings = get_settings()
     ensure_bucket(settings)
     snapshot_ts = datetime.now(UTC).replace(microsecond=0)
-    records = collect(SteamClient(settings.steam_api_key), load_apps(), snapshot_ts)
+    discovered = get_json(settings, "landing/igdb/steam_tracked_apps.json", default=[])
+    apps = merge_apps(load_apps(), discovered)
+    records = collect(SteamClient(settings.steam_api_key), apps, snapshot_ts)
     key = f"landing/steam/current_players/dt={snapshot_ts:%Y-%m-%d}/{snapshot_ts:%H%M%S}.jsonl"
     uri = put_jsonl(settings, key, records)
     ok = sum(r["player_count"] is not None for r in records)
