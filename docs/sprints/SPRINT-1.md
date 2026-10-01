@@ -7,16 +7,16 @@
 Marca cada paso al terminarlo (en GitHub puedes editar este archivo y cambiar `[ ]` por `[x]`).
 
 ## A · Preparar el Mac (semana 1, día 1) — **empieza aquí**
-- [ ] **1. Instalar herramientas:** `xcode-select --install`, Homebrew, `brew install uv openjdk@21`, Docker Desktop (Memory ≥ 8 GB)
-- [ ] **2. Clonar el repo y probar:** `make install` → `make test` (debe salir `8 passed`)
+- [x] **1. Instalar herramientas:** `xcode-select --install`, Homebrew, `brew install uv openjdk@21`, Docker Desktop (Memory ≥ 8 GB)
+- [x] **2. Clonar el repo y probar:** `make install` → `make test` (debe salir `8 passed`)
 
 ## B · Levantar la infraestructura (día 2)
-- [ ] **3. Arrancar los servicios:** `make up` → abrir http://localhost:8080 (Kafka) y http://localhost:9001 (MinIO, `minioadmin`/`minioadmin`)
-- [ ] **4. Ajustes del Mac:** Docker Desktop → *Start Docker Desktop when you sign in* · Batería → evitar suspensión con el adaptador conectado
+- [x] **3. Arrancar los servicios:** `make up` → abrir http://localhost:8080 (Kafka) y http://localhost:9001 (MinIO, `minioadmin`/`minioadmin`)
+- [x] **4. Ajustes del Mac:** Docker Desktop → *Start Docker Desktop when you sign in* · Batería → evitar suspensión con el adaptador conectado
 
 ## C · Capturar datos (días 2-3)
-- [ ] **5. Credenciales de Twitch:** crear la app en https://dev.twitch.tv/console/apps y copiar Client ID y Secret en `.env`
-- [ ] **6. Arrancar la captura:** `make ingest` y comprobar con `make logs` que se envían snapshots
+- [x] **5. Credenciales de Twitch:** crear la app en https://dev.twitch.tv/console/apps y copiar Client ID y Secret en `.env`
+- [x] **6. Arrancar la captura:** `make ingest` y comprobar con `make logs` que se envían snapshots
 - [ ] **7. Probar un reinicio:** reiniciar Docker Desktop (o el Mac) y verificar con `make status` que la captura vuelve sola
 
 ## D · Aprender (en paralelo a A-C, días 1-5)
