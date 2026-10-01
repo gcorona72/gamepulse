@@ -1,4 +1,4 @@
-.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -35,6 +35,9 @@ producer:  ## (Depuración) productor en primer plano, sin Docker
 
 steam:     ## Batch: jugadores de Steam -> landing en MinIO
 	uv run python -m gamepulse.ingestion.steam_players_batch
+
+game-map:  ## Batch: cruce Twitch <-> IGDB <-> Steam -> landing en MinIO
+	uv run python -m gamepulse.ingestion.game_map_batch
 
 bronze:    ## Spark Structured Streaming: Kafka -> Delta bronze
 	uv run python -m gamepulse.spark.twitch_stream_to_bronze
