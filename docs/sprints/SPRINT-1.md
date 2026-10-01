@@ -17,11 +17,11 @@ Marca cada paso al terminarlo (en GitHub puedes editar este archivo y cambiar `[
 ## C · Capturar datos (días 2-3)
 - [x] **5. Credenciales de Twitch:** crear la app en https://dev.twitch.tv/console/apps y copiar Client ID y Secret en `.env`
 - [x] **6. Arrancar la captura:** `make ingest` y comprobar con `make logs` que se envían snapshots
-- [ ] **7. Probar un reinicio:** reiniciar Docker Desktop (o el Mac) y verificar con `make status` que la captura vuelve sola
+- [x] **7. Probar un reinicio:** reiniciar Docker Desktop (o el Mac) y verificar con `make status` que la captura vuelve sola
 
-## D · Aprender (en paralelo a A-C, días 1-5)
-- [ ] **8. Docker Compose:** servicios, volúmenes, puertos, `depends_on`, `restart`
-- [ ] **9. Kafka:** topic, partición, offset, consumer group, retención
+## D · Formación en paralelo (no bloquea)
+- [x] **8. Docker Compose:** servicios, volúmenes, puertos, `depends_on`, `restart`
+- [x] **9. Kafka:** topic, partición, offset, consumer group, retención
 - [ ] **10. Coursera:** *Creación de lagos de datos en AWS*
 
 ## E · Spark y Azure (semana 2)
