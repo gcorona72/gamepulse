@@ -1,4 +1,4 @@
-.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -41,6 +41,12 @@ bronze:    ## Spark Structured Streaming: Kafka -> Delta bronze
 
 inspect:   ## Consulta rápida de la tabla bronze
 	uv run python -m gamepulse.spark.inspect_bronze
+
+bronze-azure:  ## Igual que bronze, pero escribe en Azure ADLS Gen2
+	LAKEHOUSE_TARGET=azure uv run python -m gamepulse.spark.twitch_stream_to_bronze
+
+inspect-azure: ## Consulta la tabla bronze en Azure
+	LAKEHOUSE_TARGET=azure uv run python -m gamepulse.spark.inspect_bronze
 
 diagrams:  ## Regenera las imágenes de docs/diagrams (necesita Node.js)
 	./scripts/render_diagrams.sh

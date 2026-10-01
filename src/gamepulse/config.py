@@ -1,6 +1,7 @@
 """Configuración centralizada: lee variables de entorno y el fichero .env."""
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,6 +21,12 @@ class Settings(BaseSettings):
     s3_secret_key: str = "minioadmin"
     lakehouse_bucket: str = "lakehouse"
 
+    # Destino del lakehouse de Spark: "minio" (local) o "azure" (ADLS Gen2)
+    lakehouse_target: Literal["minio", "azure"] = "minio"
+    azure_storage_account: str = ""
+    azure_storage_key: str = ""
+    azure_container: str = "lakehouse"
+
     # Ingesta
     twitch_top_games: int = 50
     twitch_poll_seconds: int = 60
@@ -28,7 +35,14 @@ class Settings(BaseSettings):
 
     @property
     def lakehouse_uri(self) -> str:
-        """Raíz del lakehouse para Spark (protocolo s3a de Hadoop)."""
+        """Raíz del lakehouse para Spark: s3a:// (MinIO) o abfss:// (ADLS Gen2)."""
+        if self.lakehouse_target == "azure":
+            if not self.azure_storage_account:
+                raise ValueError("Falta AZURE_STORAGE_ACCOUNT en .env")
+            return (
+                f"abfss://{self.azure_container}"
+                f"@{self.azure_storage_account}.dfs.core.windows.net"
+            )
         return f"s3a://{self.lakehouse_bucket}"
 
 
