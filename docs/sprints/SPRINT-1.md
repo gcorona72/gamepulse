@@ -25,10 +25,10 @@ Marca cada paso al terminarlo (en GitHub puedes editar este archivo y cambiar `[
 - [ ] **10. Coursera:** *Creación de lagos de datos en AWS*
 
 ## E · Spark y Azure (semana 2)
-- [ ] **11. Azure for Students:** activar con el correo de la UAX y crear la cuenta de almacenamiento ADLS Gen2 (guiado)
+- [x] **11. Azure for Students:** activar con el correo de la UAX y crear la cuenta de almacenamiento ADLS Gen2 (guiado)
 - [ ] **12. Aprender Spark:** DataFrames, evaluación perezosa, Structured Streaming, checkpoints, Delta Lake
-- [ ] **13. Bronze en local:** `make bronze` → `make inspect`
-- [ ] **14. Bronze en Azure:** configurar Spark para escribir en ADLS Gen2 (`abfss://`)
+- [x] **13. Bronze en local:** `make bronze` → `make inspect`
+- [x] **14. Bronze en Azure:** configurar Spark para escribir en ADLS Gen2 (`abfss://`)
 - [ ] **15. Cruce Twitch ↔ Steam:** tabla de juegos vía IGDB (`igdb_id` → `appid` de Steam)
 
 ## F · Cerrar el sprint (último día)
