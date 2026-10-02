@@ -1,4 +1,4 @@
-.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -35,6 +35,12 @@ producer:  ## (Depuración) productor en primer plano, sin Docker
 
 steam:     ## Batch: jugadores de Steam -> landing en MinIO
 	uv run python -m gamepulse.ingestion.steam_players_batch
+
+steam-store:   ## Batch: precios, descuentos y géneros de Steam -> landing
+	uv run python -m gamepulse.ingestion.steam_store_batch
+
+steam-reviews: ## Batch incremental: reseñas nuevas de Steam -> landing
+	uv run python -m gamepulse.ingestion.steam_reviews_batch
 
 game-map:  ## Batch: cruce Twitch <-> IGDB <-> Steam -> landing en MinIO
 	uv run python -m gamepulse.ingestion.game_map_batch
