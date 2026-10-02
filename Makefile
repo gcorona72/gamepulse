@@ -1,4 +1,4 @@
-.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews silver silver-full gold gold-docs
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews silver silver-full gold gold-docs airflow-logs
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -18,7 +18,8 @@ test:
 lint:
 	uv run ruff check src tests
 
-ingest:    ## Arranca la captura 24/7 en Docker (Twitch + Steam + Spark bronze), se reanuda sola tras reiniciar
+ingest:    ## Arranca todo 24/7 en Docker (Twitch + Steam + Spark bronze + Airflow), se reanuda solo
+	mkdir -p warehouse
 	docker compose --profile ingest up -d --build
 
 ingest-stop: ## Para solo la captura
@@ -59,6 +60,9 @@ gold:      ## Capa gold con dbt sobre DuckDB: modelos, snapshot SCD2 y tests
 
 gold-docs: ## Documentación y linaje de dbt en http://localhost:8081
 	cd dbt && uv run --extra gold dbt docs generate --profiles-dir . && uv run --extra gold dbt docs serve --profiles-dir . --port 8081
+
+airflow-logs: ## Logs de Airflow (UI en http://localhost:8085)
+	docker compose --profile ingest logs -f --tail 50 airflow
 
 inspect:   ## Consulta rápida de la tabla bronze
 	uv run python -m gamepulse.spark.inspect_bronze

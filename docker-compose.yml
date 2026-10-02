@@ -132,9 +132,33 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  # Airflow se añade en la semana 7 (ver docs/PLAN.md)
+  # --- Orquestación: Airflow (modo standalone, un solo contenedor) ---
+  # UI: http://localhost:8085 · Lanza silver (Spark) y gold (dbt) cada hora como contenedores
+  # de la imagen spark-bronze, a través del socket de Docker (DockerOperator).
+  airflow:
+    image: apache/airflow:3.3.2-python3.12
+    command: standalone
+    profiles: ["ingest"]
+    user: "0:0"   # necesario para usar /var/run/docker.sock en Docker Desktop
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"   # sin login (solo uso local)
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/db/airflow.db
+      HOST_PROJECT_DIR: ${PWD}   # ruta del proyecto en el Mac (para montar warehouse/)
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - airflow_db:/opt/airflow/db
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8085:8080"
+    depends_on:
+      minio:
+        condition: service_started
+    restart: unless-stopped
 
 volumes:
   redpanda_data:
   minio_data:
   spark_ivy:
+  duckdb_ext:
+  airflow_db:

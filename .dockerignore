@@ -6,3 +6,7 @@ docs
 **/__pycache__
 .pytest_cache
 .ruff_cache
+dbt/target
+dbt/logs
+warehouse
+airflow

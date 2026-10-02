@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Imagen para el job de Spark (Kafka -> Delta bronze). Java 21 + Python 3.12 + PySpark.
+# Imagen de procesamiento: Spark (bronze, silver) + dbt/DuckDB (gold). Java 21 + Python 3.12.
 FROM eclipse-temurin:21-jre-noble
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
     && rm -rf /var/lib/apt/lists/*
@@ -9,11 +9,12 @@ ENV UV_HTTP_TIMEOUT=300 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_CACHE_DIR=/ro
 COPY pyproject.toml uv.lock README.md ./
 # 1) Solo dependencias: esta capa se cachea y no se repite al cambiar el código
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --extra spark --no-install-project
+    uv sync --frozen --no-dev --extra spark --extra gold --no-install-project
 # 2) El código del proyecto (rápido, sin descargas)
 COPY src ./src
 COPY config ./config
+COPY dbt ./dbt
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --extra spark
+    uv sync --frozen --no-dev --extra spark --extra gold
 ENV PATH="/app/.venv/bin:$PATH"
 CMD ["python", "-m", "gamepulse.spark.twitch_stream_to_bronze"]
