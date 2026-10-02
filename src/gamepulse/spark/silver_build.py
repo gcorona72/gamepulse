@@ -84,7 +84,12 @@ def build_twitch(spark: SparkSession, root: str, days: int, full: bool) -> None:
 def build_landing(spark: SparkSession, root: str) -> None:
     for table, (folder, schema, transform, partition) in LANDING_TABLES.items():
         try:
-            raw = spark.read.schema(schema).json(f"{root}/{folder}/dt=*/*.jsonl")
+            raw = (
+                spark.read.schema(schema)
+                .option("recursiveFileLookup", "true")  # sin comodines: evita avisos de Spark
+                .option("pathGlobFilter", "*.jsonl")
+                .json(f"{root}/{folder}")
+            )
         except Exception as exc:  # aún no hay ficheros en landing
             log.warning("%s: sin datos en landing (%s)", table, type(exc).__name__)
             continue
