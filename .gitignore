@@ -10,3 +10,8 @@ derby.log
 checkpoints/
 data/
 .DS_Store
+warehouse/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt.tgz

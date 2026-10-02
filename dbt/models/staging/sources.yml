@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: silver
+    description: Capa silver (tablas Delta escritas por Spark en el lakehouse).
+    meta:
+      # {name} se sustituye por el nombre de cada tabla. Se puede cambiar por variable de entorno.
+      external_location: "{{ env_var('SILVER_SCAN', \"delta_scan('s3://lakehouse/silver/{name}')\") }}"
+    tables:
+      - name: twitch_streams
+        description: Un registro por directo y snapshot (cada minuto), del top 50 de Twitch.
+      - name: steam_players
+        description: Jugadores simultáneos por juego y hora.
+      - name: steam_store
+        description: Ficha de la tienda por juego y día (precio, descuento, géneros).
+      - name: steam_reviews
+        description: Una fila por reseña de Steam.
+      - name: game_map
+        description: Histórico del cruce Twitch <-> IGDB <-> Steam.

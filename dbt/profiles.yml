@@ -1,0 +1,19 @@
+# Las rutas y credenciales salen de variables de entorno (valores por defecto: MinIO local).
+gamepulse:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '../warehouse/gamepulse.duckdb') }}"
+      threads: 4
+      extensions: [httpfs, delta]
+      settings:
+        TimeZone: UTC   # Spark guarda en UTC: evita que las horas se desplacen
+      secrets:
+        - type: s3
+          key_id: "{{ env_var('S3_ACCESS_KEY', 'minioadmin') }}"
+          secret: "{{ env_var('S3_SECRET_KEY', 'minioadmin') }}"
+          endpoint: "{{ env_var('DUCKDB_S3_ENDPOINT', 'localhost:9000') }}"
+          region: us-east-1
+          url_style: path
+          use_ssl: false

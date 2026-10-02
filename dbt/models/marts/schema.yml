@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: dim_game
+    description: Juegos de Twitch y de Steam, unidos mediante IGDB.
+    columns:
+      - name: game_key
+        description: tw_<id Twitch> o st_<appid> si solo está en Steam.
+        data_tests: [unique, not_null]
+      - name: in_twitch
+        data_tests: [not_null]
+
+  - name: dim_date
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+
+  - name: fct_twitch_audience_hourly
+    description: Audiencia media y pico por juego y hora.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [game_key, hour_ts]
+    columns:
+      - name: game_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_game')
+                field: game_key
+      - name: avg_viewers
+        data_tests: [not_null]
+
+  - name: fct_steam_players_hourly
+    columns:
+      - name: appid
+        data_tests: [not_null]
+      - name: game_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_game')
+                field: game_key
+
+  - name: fct_steam_price_daily
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [appid, date_day]
+
+  - name: fct_reviews
+    columns:
+      - name: recommendationid
+        data_tests: [unique, not_null]
+      - name: voted_up
+        data_tests: [not_null]
+
+  - name: mart_twitch_vs_steam_hourly
+    description: Audiencia de Twitch y jugadores de Steam por juego y hora (preguntas 1 y 3).

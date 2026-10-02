@@ -13,6 +13,8 @@ dependencies = [
 [project.optional-dependencies]
 # Solo para el procesamiento (Mac). Los contenedores de ingesta no lo necesitan.
 spark = ["pyspark==4.0.1", "delta-spark==4.0.0"]
+# Capa gold: dbt sobre DuckDB (lee las tablas Delta de silver)
+gold = ["dbt-duckdb>=1.9", "duckdb>=1.3"]
 
 [dependency-groups]
 dev = ["pytest>=8.3", "ruff>=0.6"]
