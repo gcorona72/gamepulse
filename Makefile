@@ -1,4 +1,4 @@
-.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews silver silver-full
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -47,6 +47,12 @@ game-map:  ## Batch: cruce Twitch <-> IGDB <-> Steam -> landing en MinIO
 
 bronze:    ## (Depuración) Spark bronze en primer plano. Antes: docker compose stop spark-bronze
 	uv run python -m gamepulse.spark.twitch_stream_to_bronze
+
+silver:    ## Construye la capa silver (Twitch: últimos 2 días; Steam: completo). Corre en Docker
+	docker compose --profile ingest run --build --rm --no-deps spark-bronze python -m gamepulse.spark.silver_build
+
+silver-full: ## Igual que silver, pero reprocesa todo el histórico de Twitch
+	docker compose --profile ingest run --build --rm --no-deps spark-bronze python -m gamepulse.spark.silver_build --full
 
 inspect:   ## Consulta rápida de la tabla bronze
 	uv run python -m gamepulse.spark.inspect_bronze
