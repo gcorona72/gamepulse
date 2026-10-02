@@ -1,4 +1,4 @@
-.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews silver silver-full gold gold-docs airflow-logs
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews silver silver-full gold gold-docs airflow-logs dashboard
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -63,6 +63,9 @@ gold-docs: ## Documentación y linaje de dbt en http://localhost:8081
 
 airflow-logs: ## Logs de Airflow (UI en http://localhost:8085)
 	docker compose --profile ingest logs -f --tail 50 airflow
+
+dashboard: ## Dashboard Streamlit sobre la capa gold en http://localhost:8501
+	uv run --extra gold --with streamlit streamlit run dashboard/app.py
 
 inspect:   ## Consulta rápida de la tabla bronze
 	uv run python -m gamepulse.spark.inspect_bronze
