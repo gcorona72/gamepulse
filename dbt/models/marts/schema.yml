@@ -58,3 +58,24 @@ models:
 
   - name: mart_twitch_vs_steam_hourly
     description: Audiencia de Twitch y jugadores de Steam por juego y hora (preguntas 1 y 3).
+
+  - name: mart_sale_uplift
+    description: >
+      Pregunta 2. Una fila por rebaja (días consecutivos con descuento): media de jugadores
+      durante la rebaja frente a los 7 días anteriores y subida en porcentaje.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [appid, sale_start]
+    columns:
+      - name: sale_days
+        data_tests: [not_null]
+
+  - name: mart_audience_lead
+    description: >
+      Pregunta 1. Correlación entre espectadores de Twitch en la hora t y jugadores de Steam en
+      t + lag_hours (0-12 h), por juego. El lag con la correlación más alta es el adelanto de Twitch.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [game_key, lag_hours]
