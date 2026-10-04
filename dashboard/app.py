@@ -85,20 +85,12 @@ with tab1:
         "Correlación no implica causalidad."
     )
     lags = q("""
-        with m as (
-            select game_name, hour_ts, avg_viewers as v, avg_players as p
-            from gold.mart_twitch_vs_steam_hourly
-        )
-        select a.game_name, r.lag as retraso_h, corr(a.v, b.p) as correlacion, count(*) as n
-        from m as a
-        cross join range(0, 13) as r(lag)
-        join m as b
-          on b.game_name = a.game_name and b.hour_ts = a.hour_ts + r.lag * interval 1 hour
-        group by 1, 2
-        having count(*) >= 12 and corr(a.v, b.p) is not null
+        select game_name, lag_hours as retraso_h, correlation as correlacion, n_hours as n
+        from gold.mart_audience_lead
+        where correlation is not null
     """)
     if lags.empty:
-        st.warning("Todavía no hay horas suficientes para calcular retrasos (mínimo 12 por juego).")
+        st.warning("Todavía no hay horas suficientes para calcular retrasos (mínimo 24 por juego).")
     else:
         best = (
             lags.sort_values("correlacion", ascending=False)
@@ -164,35 +156,66 @@ with tab1:
 # ---------------------------------------------------------------- P2: rebajas
 with tab2:
     st.subheader("¿Cuánto aumentan los jugadores durante una rebaja?")
+    st.caption(
+        "Cada rebaja son días seguidos con descuento. Se compara la media de jugadores durante "
+        "la rebaja con la de los 7 días anteriores sin descuento."
+    )
     uplift = q("""
-        with daily as (
-            select appid, date_day, avg(avg_players) as players
-            from gold.fct_steam_players_hourly group by 1, 2
-        ),
-        x as (
-            select coalesce(g.game_name, cast(p.appid as varchar)) as juego, p.on_sale, d.players
-            from gold.fct_steam_price_daily as p
-            join daily as d using (appid, date_day)
-            left join gold.dim_game as g on g.game_key = p.game_key
-        )
-        select juego,
-               avg(players) filter (where on_sale) as jugadores_rebaja,
-               avg(players) filter (where not on_sale) as jugadores_normal
-        from x group by 1
-        having jugadores_rebaja is not null and jugadores_normal is not null
+        select coalesce(g.game_name, cast(u.appid as varchar)) as juego,
+               u.sale_start as inicio, u.sale_end as fin, u.sale_days as dias,
+               u.max_discount_percent as descuento,
+               u.avg_players_baseline_7d as jugadores_antes,
+               u.avg_players_during_sale as jugadores_rebaja,
+               u.uplift_pct as variacion
+        from gold.mart_sale_uplift as u
+        left join gold.dim_game as g on g.game_key = u.game_key
+        where u.uplift_pct is not null
+        order by u.uplift_pct desc
     """)
     if uplift.empty:
         st.warning(
-            "Aún no hay juegos con días en rebaja y días sin rebaja para comparar. "
+            "Aún no hay rebajas con 7 días previos de histórico para comparar. "
             "El historial de precios se va construyendo cada día (snapshot SCD2)."
         )
     else:
-        uplift["variación"] = uplift.jugadores_rebaja / uplift.jugadores_normal - 1
+        m1, m2 = st.columns(2)
+        m1.metric("Rebajas analizadas", len(uplift))
+        m2.metric("Subida media de jugadores", f"{uplift.variacion.mean():+.1f}%")
+        st.altair_chart(
+            alt.Chart(uplift)
+            .mark_bar()
+            .encode(
+                x=alt.X("variacion:Q", title="Variación de jugadores durante la rebaja (%)"),
+                y=alt.Y("juego:N", sort="-x", title=None),
+                color=alt.condition(
+                    alt.datum.variacion > 0, alt.value("#1B9E77"), alt.value("#D95F02")
+                ),
+                tooltip=[
+                    "juego",
+                    "inicio:T",
+                    "fin:T",
+                    alt.Tooltip("descuento", title="Descuento %"),
+                    alt.Tooltip("variacion", format="+.1f", title="Variación %"),
+                ],
+            ),
+            width="stretch",
+        )
         st.dataframe(
-            uplift.sort_values("variación", ascending=False),
+            uplift.rename(
+                columns={
+                    "juego": "Juego",
+                    "inicio": "Inicio",
+                    "fin": "Fin",
+                    "dias": "Días",
+                    "descuento": "Descuento %",
+                    "jugadores_antes": "Jugadores (7 días antes)",
+                    "jugadores_rebaja": "Jugadores (rebaja)",
+                    "variacion": "Variación %",
+                }
+            ),
             hide_index=True,
             width="stretch",
-            column_config={"variación": st.column_config.NumberColumn(format="%.1f%%")},
+            column_config={"Variación %": st.column_config.NumberColumn(format="%+.1f%%")},
         )
     st.markdown("**Rebajas activas (última captura)**")
     st.dataframe(
