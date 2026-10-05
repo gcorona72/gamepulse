@@ -79,3 +79,18 @@ models:
       - unique_combination:
           arguments:
             columns: [game_key, lag_hours]
+  - name: dim_language
+    description: Idiomas de Twitch y Steam unificados por código ISO 639-1 (seed language_map).
+    columns:
+      - name: language_code
+        data_tests: [unique, not_null]
+
+  - name: dim_steam_price_history
+    description: Historial de precios de Steam (SCD tipo 2) desde el snapshot snap_steam_price.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [appid, valid_from]
+    columns:
+      - name: valid_from
+        data_tests: [not_null]
