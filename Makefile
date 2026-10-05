@@ -65,7 +65,7 @@ airflow-logs: ## Logs de Airflow (UI en http://localhost:8085)
 	docker compose --profile ingest logs -f --tail 50 airflow
 
 dashboard: ## Dashboard Streamlit sobre la capa gold en http://localhost:8501
-	uv run --extra gold --with streamlit streamlit run dashboard/app.py
+	uv run --extra gold --extra dashboard streamlit run dashboard/app.py
 
 inspect:   ## Consulta rápida de la tabla bronze
 	uv run python -m gamepulse.spark.inspect_bronze
