@@ -20,6 +20,14 @@ dashboard = [
     "pandas>=3.0.6",
     "streamlit>=1.65.0",
 ]
+ml = [
+    "accelerate>=1.15.0",
+    "datasets>=5.1.0",
+    "mlflow>=3.16.1",
+    "scikit-learn>=1.9.1",
+    "torch>=2.14.1",
+    "transformers>=5.18.0",
+]
 
 [dependency-groups]
 dev = ["pytest>=8.3", "ruff>=0.6"]
