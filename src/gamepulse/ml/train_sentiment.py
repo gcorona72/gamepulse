@@ -77,6 +77,7 @@ def main() -> None:
     model = AutoModelForSequenceClassification.from_pretrained(
         args.model,
         num_labels=2,
+        ignore_mismatched_sizes=True,
         id2label=LABELS,
         label2id={v: k for k, v in LABELS.items()},
     )
