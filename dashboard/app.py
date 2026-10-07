@@ -301,52 +301,72 @@ with tab3:
 with tab4:
     st.subheader("¿Cómo evoluciona el sentimiento de las reseñas?")
     st.caption(
-        "Hoy: % de reseñas que recomiendan el juego (voted_up). En la semana 9 se añade el "
-        "sentimiento estimado por el modelo Transformer entrenado con estas mismas reseñas."
+        "Dos señales por juego y día: el % de reseñas que recomiendan el juego (voted_up, lo que marca "
+        "el autor) y el % que el modelo Transformer (XLM-RoBERTa, F1 macro 0,83 en test) clasifica "
+        "como positivas leyendo solo el texto."
     )
-    summary = q("""
-        select coalesce(g.game_name, cast(r.appid as varchar)) as juego,
-               count(*) as resenas, avg(cast(r.voted_up as int)) as positivas
-        from gold.fct_reviews as r
-        left join gold.dim_game as g on g.game_key = r.game_key
-        group by 1 having count(*) >= 20 order by resenas desc
+    k = q("""
+        select count(*) as resenas,
+               avg(cast(voted_up as int)) as voted_up,
+               avg(cast(pred_positive as int)) as modelo,
+               avg(cast(model_agrees as int)) as acuerdo
+        from gold.fct_review_sentiment
     """)
-    if summary.empty:
-        st.warning("Sin reseñas todavía.")
+    if k.empty or k.resenas.iloc[0] == 0:
+        st.warning("Aún no hay predicciones. Ejecuta `python -m gamepulse.ml.predict_sentiment` y `dbt build`.")
     else:
+        k = k.iloc[0]
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Reseñas clasificadas", f"{int(k.resenas):,}".replace(",", "."))
+        m2.metric("Positivas según el autor", f"{k.voted_up:.1%}")
+        m3.metric("Positivas según el modelo", f"{k.modelo:.1%}")
+        m4.metric("Coincidencia modelo-autor", f"{k.acuerdo:.1%}")
+
+        summary = q("""
+            select coalesce(g.game_name, cast(s.appid as varchar)) as juego,
+                   sum(s.reviews) as resenas,
+                   sum(s.pct_voted_up * s.reviews) / sum(s.reviews) as autor,
+                   sum(s.pct_pred_positive * s.reviews) / sum(s.reviews) as modelo
+            from gold.mart_review_sentiment_daily as s
+            left join gold.dim_game as g on g.game_key = s.game_key
+            group by 1 having sum(s.reviews) >= 20 order by resenas desc
+        """)
         a, b = st.columns([2, 3])
+        pct = dict(format="percent", min_value=0, max_value=1)
         a.dataframe(
             summary,
             hide_index=True,
             width="stretch",
             column_config={
-                "positivas": st.column_config.ProgressColumn(
-                    "% positivas", format="percent", min_value=0, max_value=1
-                )
+                "autor": st.column_config.ProgressColumn("% positivas (autor)", **pct),
+                "modelo": st.column_config.ProgressColumn("% positivas (modelo)", **pct),
             },
         )
         game = b.selectbox("Juego", summary.juego.tolist(), key="p4_game")
         daily = q(f"""
-            select r.date_day as dia, avg(cast(r.voted_up as int)) as positivas, count(*) as resenas
-            from gold.fct_reviews as r
-            left join gold.dim_game as g on g.game_key = r.game_key
-            where coalesce(g.game_name, cast(r.appid as varchar)) = '{game.replace("'", "''")}'
-            group by 1 having count(*) >= 5 order by 1
+            select s.date_day as dia, s.reviews as resenas,
+                   s.pct_voted_up as "Autor (voted_up)", s.pct_pred_positive as "Modelo"
+            from gold.mart_review_sentiment_daily as s
+            left join gold.dim_game as g on g.game_key = s.game_key
+            where coalesce(g.game_name, cast(s.appid as varchar)) = '{game.replace("'", "''")}'
+              and s.reviews >= 5
+            order by 1
         """)
+        long = daily.melt(id_vars=["dia", "resenas"], var_name="señal", value_name="positivas")
         b.altair_chart(
-            alt.Chart(daily)
+            alt.Chart(long)
             .mark_line(point=True)
             .encode(
                 x=alt.X("dia:T", title=None),
-                y=alt.Y(
-                    "positivas:Q",
-                    title="% positivas",
-                    axis=alt.Axis(format="%"),
-                    scale=alt.Scale(domain=[0, 1]),
-                ),
-                tooltip=["dia:T", alt.Tooltip("positivas", format=".0%"), "resenas"],
+                y=alt.Y("positivas:Q", title="% positivas", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
+                color=alt.Color("señal:N", title=None),
+                tooltip=["dia:T", "señal:N", alt.Tooltip("positivas", format=".0%"), "resenas"],
             ),
             width="stretch",
+        )
+        st.caption(
+            "La coincidencia incluye las ~20.000 reseñas usadas para entrenar, así que es algo optimista; "
+            "la métrica honesta es la del conjunto de test (accuracy 0,86 · F1 macro 0,83)."
         )
 
 st.divider()
