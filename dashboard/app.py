@@ -236,66 +236,58 @@ with tab2:
 with tab3:
     st.subheader("¿Qué juegos se ven mucho pero se juegan poco (y al revés)?")
     st.caption(
-        "Ratio = espectadores medios en Twitch / jugadores medios en Steam. "
-        "> 1: se ve más de lo que se juega. Steam solo mide PC."
+        "Índice de atención = cuota de espectadores en Twitch / cuota de jugadores en Steam. "
+        "1 = se ve tanto como se juega · ≥ 2 = se ve más · ≤ 0,5 = se juega más. "
+        "Steam solo mide PC."
     )
-    ratio = q("""
-        select game_name as juego,
-               avg(avg_viewers) as espectadores,
-               avg(avg_players) as jugadores,
-               avg(avg_viewers) / nullif(avg(avg_players), 0) as ratio,
-               count(*) as horas
-        from gold.mart_twitch_vs_steam_hourly
-        group by 1 having avg(avg_players) > 0
+    att = q("""
+        select game_name as juego, avg_viewers as espectadores, avg_players as jugadores,
+               attention_index as indice, profile as perfil, pct_positive as positivas, hours as horas
+        from gold.mart_watch_vs_play
     """)
-    if ratio.empty:
-        st.warning("Sin datos cruzados todavía.")
+    if att.empty:
+        st.warning("Sin datos cruzados todavía (hace falta al menos un día por juego).")
     else:
-        ratio["tipo"] = ratio.ratio.apply(lambda r: "Se ve más" if r > 1 else "Se juega más")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Se ven más de lo que se juegan", int((att.perfil == "se ve más").sum()))
+        c2.metric("Equilibrados", int((att.perfil == "equilibrado").sum()))
+        c3.metric("Se juegan más de lo que se ven", int((att.perfil == "se juega más").sum()))
         scatter = (
-            alt.Chart(ratio)
+            alt.Chart(att)
             .mark_circle(size=90, opacity=0.8)
             .encode(
-                x=alt.X(
-                    "jugadores:Q",
-                    scale=alt.Scale(type="log"),
-                    title="Jugadores medios en Steam (log)",
+                x=alt.X("jugadores:Q", scale=alt.Scale(type="log"), title="Jugadores medios en Steam (log)"),
+                y=alt.Y("espectadores:Q", scale=alt.Scale(type="log"), title="Espectadores medios en Twitch (log)"),
+                color=alt.Color(
+                    "perfil:N",
+                    title=None,
+                    scale=alt.Scale(domain=["se ve más", "equilibrado", "se juega más"]),
+                    legend=alt.Legend(orient="bottom"),
                 ),
-                y=alt.Y(
-                    "espectadores:Q",
-                    scale=alt.Scale(type="log"),
-                    title="Espectadores medios en Twitch (log)",
-                ),
-                color=alt.Color("tipo:N", title=None, legend=alt.Legend(orient="bottom")),
                 tooltip=[
                     "juego",
                     alt.Tooltip("espectadores", format=",.0f"),
                     alt.Tooltip("jugadores", format=",.0f"),
-                    alt.Tooltip("ratio", format=".2f"),
+                    alt.Tooltip("indice", title="índice", format=".2f"),
+                    alt.Tooltip("positivas", title="% reseñas positivas", format=".0%"),
                 ],
             )
         )
         st.altair_chart(scatter, width="stretch")
         a, b = st.columns(2)
         fmt = {
-            "ratio": st.column_config.NumberColumn(format="%.2f"),
+            "indice": st.column_config.NumberColumn("índice", format="%.2f"),
             "espectadores": st.column_config.NumberColumn(format="%d"),
             "jugadores": st.column_config.NumberColumn(format="%d"),
+            "positivas": st.column_config.ProgressColumn(
+                "% positivas", format="percent", min_value=0, max_value=1
+            ),
         }
+        cols = ["juego", "espectadores", "jugadores", "indice", "positivas"]
         a.markdown("**Se ven más de lo que se juegan**")
-        a.dataframe(
-            ratio.nlargest(10, "ratio")[["juego", "espectadores", "jugadores", "ratio"]],
-            hide_index=True,
-            width="stretch",
-            column_config=fmt,
-        )
+        a.dataframe(att.nlargest(10, "indice")[cols], hide_index=True, width="stretch", column_config=fmt)
         b.markdown("**Se juegan más de lo que se ven**")
-        b.dataframe(
-            ratio.nsmallest(10, "ratio")[["juego", "espectadores", "jugadores", "ratio"]],
-            hide_index=True,
-            width="stretch",
-            column_config=fmt,
-        )
+        b.dataframe(att.nsmallest(10, "indice")[cols], hide_index=True, width="stretch", column_config=fmt)
 
 # ---------------------------------------------------------------- P4: sentimiento
 with tab4:
