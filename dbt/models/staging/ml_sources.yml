@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: ml
+    description: Resultados de los modelos de ML, escritos por los scripts de src/gamepulse/ml.
+    schema: ml
+    tables:
+      - name: review_sentiment
+        description: >
+          Predicción del modelo de sentimiento (XLM-RoBERTa) por reseña.
+          La escribe predict_sentiment.py (inferencia por lotes, incremental).

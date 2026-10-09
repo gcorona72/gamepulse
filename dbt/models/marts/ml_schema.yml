@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: fct_review_sentiment
+    description: Una fila por reseña con la predicción del modelo de sentimiento.
+    columns:
+      - name: recommendationid
+        data_tests: [unique, not_null]
+      - name: pred_positive
+        data_tests: [not_null]
+
+  - name: mart_review_sentiment_daily
+    description: >
+      Pregunta 4. % de reseñas positivas por juego y día, según el autor (voted_up)
+      y según el modelo de sentimiento.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [appid, date_day]

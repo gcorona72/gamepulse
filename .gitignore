@@ -18,6 +18,6 @@ dbt.tgz
 
 # ML
 data/ml/
-models/
+/models/
 mlruns/
 mlflow.db

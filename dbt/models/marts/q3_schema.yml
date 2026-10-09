@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: mart_watch_vs_play
+    description: >
+      Pregunta 3. Una fila por juego: cuota de espectadores en Twitch frente a cuota de jugadores
+      en Steam (attention_index) y perfil resultante, con el % de reseñas positivas.
+    columns:
+      - name: game_key
+        data_tests: [unique, not_null]
+      - name: attention_index
+        data_tests: [not_null]
+      - name: profile
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['se ve más', 'equilibrado', 'se juega más']
