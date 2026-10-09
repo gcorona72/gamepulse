@@ -9,6 +9,7 @@ Uso:
 """
 
 import argparse
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,8 +21,9 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 ROOT = Path(__file__).resolve().parents[3]
-DB_PATH = ROOT / "warehouse" / "gamepulse.duckdb"
-MODEL_DIR = ROOT / "models" / "sentiment"
+# En local se usan las rutas del proyecto; en Airflow (Docker) se pasan por variable de entorno
+DB_PATH = Path(os.environ.get("DUCKDB_PATH", ROOT / "warehouse" / "gamepulse.duckdb"))
+MODEL_DIR = Path(os.environ.get("SENTIMENT_MODEL_DIR", ROOT / "models" / "sentiment"))
 
 
 def connect(read_only: bool) -> duckdb.DuckDBPyConnection:

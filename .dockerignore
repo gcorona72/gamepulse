@@ -10,3 +10,8 @@ dbt/target
 dbt/logs
 warehouse
 airflow
+models
+data
+mlruns
+mlflow.db
+*.log
