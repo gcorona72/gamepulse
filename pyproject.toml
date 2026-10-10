@@ -49,3 +49,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts de ML: docstrings de uso y mensajes largos
+"src/gamepulse/ml/*" = ["E501"]

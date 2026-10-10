@@ -11,7 +11,7 @@ Uso:
 import argparse
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
@@ -99,7 +99,7 @@ def main() -> None:
             "sentiment_pred": labels,          # 1 = positiva, 0 = negativa
             "sentiment_score": probs,          # probabilidad de positiva (0–1)
             "model_version": MODEL_DIR.name,
-            "scored_at": datetime.now(timezone.utc).replace(tzinfo=None),
+            "scored_at": datetime.now(UTC).replace(tzinfo=None),
         }
     )
 

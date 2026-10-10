@@ -13,6 +13,17 @@ jobs:
           distribution: temurin
           java-version: "21"
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --extra spark
-      - run: uv run ruff check src tests
-      - run: uv run pytest -q
+      - run: uv sync --extra spark --extra gold
+
+      - name: Lint (ruff)
+        run: uv run ruff check src tests
+
+      - name: Tests unitarios (pytest)
+        run: uv run pytest -q
+
+      - name: Modelos dbt válidos (dbt parse, sin datos)
+        working-directory: dbt
+        run: uv run dbt parse --profiles-dir .
+
+      - name: DAG de Airflow y dashboard sin errores de sintaxis
+        run: uv run python -m py_compile airflow/dags/gamepulse_pipeline.py dashboard/app.py
