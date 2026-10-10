@@ -361,6 +361,68 @@ with tab4:
             "la métrica honesta es la del conjunto de test (accuracy 0,86 · F1 macro 0,83)."
         )
 
+
+    # ---- ¿Cambia la opinión durante una rebaja? (cruce con la pregunta 2)
+    st.divider()
+    st.subheader("¿Cambia la opinión durante una rebaja?")
+    st.caption(
+        "% de reseñas positivas en los 7 días anteriores a cada rebaja, durante la rebaja y en los "
+        "7 días posteriores. Solo rebajas con al menos 10 reseñas antes y durante."
+    )
+    ss = q("""
+        select coalesce(g.game_name, cast(s.appid as varchar)) as juego,
+               s.sale_start as inicio, s.sale_days as dias, s.max_discount_percent as descuento,
+               s.uplift_pct as subida_jugadores, s.reviews_before, s.reviews_during,
+               s.pct_positive_before as antes, s.pct_positive_during as durante,
+               s.pct_positive_after as despues, s.delta_during_pp as cambio_pp,
+               s.model_delta_during_pp as cambio_modelo_pp
+        from gold.mart_sale_sentiment as s
+        left join gold.dim_game as g on g.game_key = s.game_key
+        where s.reviews_before >= 10 and s.reviews_during >= 10
+        order by s.delta_during_pp
+    """)
+    if ss.empty:
+        st.info("Aún no hay rebajas con reseñas suficientes antes y durante la rebaja.")
+    else:
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Rebajas analizadas", len(ss))
+        m2.metric("Cambio medio (autor)", f"{ss.cambio_pp.mean():+.1f} pp")
+        m3.metric("Rebajas en las que empeora", f"{(ss.cambio_pp < 0).mean():.0%}")
+        st.altair_chart(
+            alt.Chart(ss)
+            .mark_bar()
+            .encode(
+                x=alt.X("cambio_pp:Q", title="Cambio en % de positivas durante la rebaja (puntos)"),
+                y=alt.Y("juego:N", sort="x", title=None),
+                color=alt.condition("datum.cambio_pp < 0", alt.value("#d1495b"), alt.value("#2e86ab")),
+                tooltip=[
+                    "juego",
+                    "inicio:T",
+                    alt.Tooltip("descuento", title="descuento %"),
+                    alt.Tooltip("antes", format=".0%"),
+                    alt.Tooltip("durante", format=".0%"),
+                    alt.Tooltip("despues", title="después", format=".0%"),
+                    alt.Tooltip("subida_jugadores", title="subida jugadores %", format=".1f"),
+                ],
+            ),
+            width="stretch",
+        )
+        pct = dict(format="percent", min_value=0, max_value=1)
+        st.dataframe(
+            ss[["juego", "inicio", "dias", "descuento", "subida_jugadores", "antes", "durante",
+                "despues", "cambio_pp", "cambio_modelo_pp"]],
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "antes": st.column_config.ProgressColumn("antes", **pct),
+                "durante": st.column_config.ProgressColumn("durante", **pct),
+                "despues": st.column_config.ProgressColumn("después", **pct),
+                "subida_jugadores": st.column_config.NumberColumn("subida jugadores %", format="%.1f"),
+                "cambio_pp": st.column_config.NumberColumn("cambio (pp)", format="%+.1f"),
+                "cambio_modelo_pp": st.column_config.NumberColumn("cambio modelo (pp)", format="%+.1f"),
+            },
+        )
+
 st.divider()
 st.caption(
     "Fuentes: Twitch Helix API, Steam Web API, IGDB · Pipeline: Kafka → Spark (bronze, silver) → "

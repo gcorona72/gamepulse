@@ -83,7 +83,7 @@ with DAG(
     gold_sentiment = DockerOperator(
         task_id="gold_sentiment_dbt",
         image=IMAGE,
-        command="dbt build --profiles-dir . --select fct_review_sentiment+",
+        command="dbt build --profiles-dir . --select fct_review_sentiment+ mart_sale_sentiment",
         working_dir="/app/dbt",
         environment=ENV,
         mounts=[WAREHOUSE, DUCKDB_EXT],

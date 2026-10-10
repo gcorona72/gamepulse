@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: mart_sale_sentiment
+    description: >
+      Pregunta 4. Una fila por rebaja: % de reseñas positivas 7 días antes, durante y 7 días
+      después, según el autor y según el modelo, y cambio en puntos porcentuales.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [appid, sale_start]
