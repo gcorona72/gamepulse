@@ -1,9 +1,12 @@
 -- Pregunta 4. ¿Cómo cambia la opinión de los jugadores con una rebaja?
--- Para cada rebaja (mart_sale_uplift) compara el % de reseñas positivas en tres ventanas:
+-- Para cada rebaja (mart_sale_uplift) calcula el % de reseñas positivas en tres ventanas:
 -- los 7 días anteriores, los días de la rebaja y los 7 días posteriores.
+-- La referencia es la misma que en la pregunta 2: 'antes' si conocemos el inicio real de la
+-- rebaja, 'después' si ya estaba activa al empezar la captura.
 -- Dos medidas: lo que marca el autor (voted_up) y lo que el modelo lee en el texto.
 with sales as (
-    select game_key, appid, sale_start, sale_end, sale_days, max_discount_percent, uplift_pct
+    select game_key, appid, sale_start, sale_end, sale_days, max_discount_percent, uplift_pct,
+           baseline_type
     from {{ ref('mart_sale_uplift') }}
 ),
 
@@ -40,27 +43,42 @@ agg as (
         avg(model_positive) filter (where period = 'after') as model_positive_after
     from windowed
     group by appid, sale_start
+),
+
+ref as (
+    select
+        s.*,
+        a.* exclude (appid, sale_start),
+        case when s.baseline_type = 'antes' then a.reviews_before else a.reviews_after end
+            as reviews_ref,
+        case when s.baseline_type = 'antes' then a.pct_positive_before else a.pct_positive_after end
+            as pct_positive_ref,
+        case when s.baseline_type = 'antes' then a.model_positive_before
+             else a.model_positive_after end as model_positive_ref
+    from sales as s
+    inner join agg as a using (appid, sale_start)
 )
 
 select
-    s.game_key,
-    s.appid,
-    s.sale_start,
-    s.sale_end,
-    s.sale_days,
-    s.max_discount_percent,
-    s.uplift_pct,
-    a.reviews_before,
-    a.reviews_during,
-    a.reviews_after,
-    a.pct_positive_before,
-    a.pct_positive_during,
-    a.pct_positive_after,
-    a.model_positive_before,
-    a.model_positive_during,
-    a.model_positive_after,
-    -- cambio en puntos porcentuales (durante - antes): > 0 = la opinión mejora con la rebaja
-    round(100 * (a.pct_positive_during - a.pct_positive_before), 2) as delta_during_pp,
-    round(100 * (a.model_positive_during - a.model_positive_before), 2) as model_delta_during_pp
-from sales as s
-inner join agg as a using (appid, sale_start)
+    game_key,
+    appid,
+    sale_start,
+    sale_end,
+    sale_days,
+    max_discount_percent,
+    uplift_pct,
+    baseline_type,
+    reviews_before,
+    reviews_during,
+    reviews_after,
+    reviews_ref,
+    pct_positive_before,
+    pct_positive_during,
+    pct_positive_after,
+    model_positive_before,
+    model_positive_during,
+    model_positive_after,
+    -- cambio en puntos porcentuales (durante - referencia): > 0 = la opinión mejora con la rebaja
+    round(100 * (pct_positive_during - pct_positive_ref), 2) as delta_during_pp,
+    round(100 * (model_positive_during - model_positive_ref), 2) as model_delta_during_pp
+from ref

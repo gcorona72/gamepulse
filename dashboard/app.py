@@ -158,12 +158,14 @@ with tab2:
     st.subheader("¿Cuánto aumentan los jugadores durante una rebaja?")
     st.caption(
         "Cada rebaja son días seguidos con descuento. Se compara la media de jugadores durante "
-        "la rebaja con la de los 7 días anteriores sin descuento."
+        "la rebaja con 7 días sin descuento: los anteriores o, si la rebaja ya estaba activa al "
+        "empezar la captura, los posteriores (columna Referencia)."
     )
     uplift = q("""
         select coalesce(g.game_name, cast(u.appid as varchar)) as juego,
                u.sale_start as inicio, u.sale_end as fin, u.sale_days as dias,
                u.max_discount_percent as descuento,
+               u.baseline_type as referencia,
                u.avg_players_baseline_7d as jugadores_antes,
                u.avg_players_during_sale as jugadores_rebaja,
                u.uplift_pct as variacion
@@ -208,7 +210,8 @@ with tab2:
                     "fin": "Fin",
                     "dias": "Días",
                     "descuento": "Descuento %",
-                    "jugadores_antes": "Jugadores (7 días antes)",
+                    "referencia": "Referencia",
+                    "jugadores_antes": "Jugadores (referencia)",
                     "jugadores_rebaja": "Jugadores (rebaja)",
                     "variacion": "Variación %",
                 }
@@ -367,7 +370,8 @@ with tab4:
     st.subheader("¿Cambia la opinión durante una rebaja?")
     st.caption(
         "% de reseñas positivas en los 7 días anteriores a cada rebaja, durante la rebaja y en los "
-        "7 días posteriores. Solo rebajas con al menos 10 reseñas antes y durante."
+        "7 días posteriores. El cambio se mide frente a la misma referencia que la pestaña 2 "
+        "(antes o después). Solo rebajas con al menos 10 reseñas en la referencia y durante."
     )
     ss = q("""
         select coalesce(g.game_name, cast(s.appid as varchar)) as juego,
@@ -378,7 +382,7 @@ with tab4:
                s.model_delta_during_pp as cambio_modelo_pp
         from gold.mart_sale_sentiment as s
         left join gold.dim_game as g on g.game_key = s.game_key
-        where s.reviews_before >= 10 and s.reviews_during >= 10
+        where s.reviews_ref >= 10 and s.reviews_during >= 10
         order by s.delta_during_pp
     """)
     if ss.empty:
