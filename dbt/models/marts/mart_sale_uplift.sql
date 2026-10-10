@@ -41,6 +41,14 @@ sales as (
     group by appid, grp
 ),
 
+-- Primer día con datos de precio de cada juego: una rebaja que "empieza" ese día probablemente
+-- ya estaba activa antes de empezar la captura (no sabemos su inicio real ni tenemos un "antes").
+first_seen as (
+    select appid, min(date_day) as first_day
+    from daily
+    group by appid
+),
+
 baseline as (
     select s.appid, s.sale_start, avg(b.avg_players) as avg_players_baseline
     from sales as s
@@ -67,3 +75,5 @@ select
     ) as uplift_pct
 from sales as s
 left join baseline as b using (appid, sale_start)
+inner join first_seen as f using (appid)
+where s.sale_start > f.first_day
