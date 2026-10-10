@@ -12,7 +12,7 @@ with per_game as (
         count(*) as hours
     from {{ ref('mart_twitch_vs_steam_hourly') }}
     group by game_key, game_name, steam_appid
-    having count(*) >= 24 and avg(avg_players) > 0   -- al menos un día de datos cruzados
+    having count(*) >= 24 and avg(avg_players) >= 500   -- al menos un día de datos y 500 jugadores medios (evita juegos casi sin jugadores)
 ),
 
 shares as (
