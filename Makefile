@@ -1,4 +1,4 @@
-.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews silver silver-full gold gold-docs airflow-logs dashboard
+.PHONY: diagrams install up down reset test lint ingest ingest-stop logs status producer steam bronze inspect bronze-azure inspect-azure game-map steam-store steam-reviews silver silver-full vacuum gold gold-docs airflow-logs dashboard
 
 install:   ## Instala dependencias de Python
 	uv sync --extra spark
@@ -54,6 +54,9 @@ silver:    ## Construye la capa silver (Twitch: últimos 2 días; Steam: complet
 
 silver-full: ## Igual que silver, pero reprocesa todo el histórico de Twitch
 	docker compose --profile ingest run --build --rm --no-deps spark-bronze python -m gamepulse.spark.silver_build --full
+
+vacuum:      ## Borra los ficheros Delta obsoletos de silver (conserva 24 h de historial)
+	docker compose --profile ingest run --build --rm --no-deps spark-bronze python -m gamepulse.spark.maintenance
 
 gold:      ## Capa gold con dbt sobre DuckDB: modelos, snapshot SCD2 y tests
 	mkdir -p warehouse && cd dbt && uv run --extra gold dbt build --profiles-dir .

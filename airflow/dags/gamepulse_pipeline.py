@@ -1,4 +1,5 @@
 """DAG horario de GamePulse: silver (Spark) -> gold (dbt) -> sentimiento (modelo) -> gold de sentimiento.
+En paralelo con gold, VACUUM de silver para que los ficheros sustituidos no llenen el disco.
 
 La ingesta (Twitch, Steam) y bronze son servicios 24/7 de docker compose; Airflow orquesta
 las transformaciones por lotes. Cada tarea arranca un contenedor efímero en la red de compose:
@@ -52,6 +53,17 @@ with DAG(
         **BASE,
     )
 
+    # Borra los ficheros Delta obsoletos de silver (overwrite horario). Los lectores (dbt)
+    # usan la versión actual, así que puede ir en paralelo con gold sin afectarles.
+    vacuum = DockerOperator(
+        task_id="vacuum_silver",
+        image=IMAGE,
+        command="python -m gamepulse.spark.maintenance --retain-hours 24",
+        environment=ENV,
+        mounts=[Mount(source="gamepulse_spark_ivy", target="/root/.ivy2.5.2", type="volume")],
+        **BASE,
+    )
+
     gold = DockerOperator(
         task_id="gold_dbt_build",
         image=IMAGE,
@@ -90,4 +102,5 @@ with DAG(
         **BASE,
     )
 
-    silver >> gold >> sentiment >> gold_sentiment
+    silver >> [gold, vacuum]
+    gold >> sentiment >> gold_sentiment
